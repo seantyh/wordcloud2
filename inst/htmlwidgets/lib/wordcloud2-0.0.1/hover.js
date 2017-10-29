@@ -38,102 +38,75 @@ function maskInit(el,x){
   console.log(1)
   str = x.figBase64;
   //console.log(str)
-  var newImg = new Image();
+  var newImg = new Image(); 
   newImg.src = str;
-  newImg.style.position = 'absolute';
-  newImg.style.left = 0;
-  // console.log(el.clientHeight);
-  newImg.width = el.clientWidth;
-  newImg.height = el.clientHeight;
-  // maskCanvas = init(el, x, newImg);
-  vvalue = 128
-  var maskCanvas = document.createElement('canvas');
-  maskCanvas.width = newImg.width;
-  maskCanvas.height = newImg.height;
-  var ctx = maskCanvas.getContext('2d');
-  ctx.drawImage(newImg, 0, 0, newImg.width, newImg.height);
-  var imageData = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-  var newImageData = ctx.createImageData(imageData);
-  // M = 0
-  console.log(imageData.data.length);
-  for (var i = 0; i < imageData.data.length; i += 4) {
-    var tone = imageData.data[i] +
-      imageData.data[i + 1] +
-      imageData.data[i + 2];
-    var alpha = imageData.data[i + 3];
+  newImg.onload = function(){
+    // console.log(el.clientHeight);
+    // newImg.style.position = 'absolute';
+    // newImg.style.left = 0;  
+    newImg.width = el.clientWidth;
+    newImg.height = el.clientHeight;
+    newImg.id = "mask_img";
+    // newImg.style.visibility = 'hidden';
+    // document.getElementsByTagName("body")[0].appendChild(newImg);
 
-    if (alpha < vvalue || tone > vvalue * 3) {
-      // Area not to draw
-      newImageData.data[i] =
-        newImageData.data[i + 1] =
-        newImageData.data[i + 2] = 255;
-      newImageData.data[i + 3] = 0;
-    } else {
-      // Area to draw
-      newImageData.data[i] =
-        newImageData.data[i + 1] =
-        newImageData.data[i + 2] = 0;
-      newImageData.data[i + 3] = 255;
+    // maskCanvas = init(el, x, newImg);
+    vvalue = 128
+
+    var canvas = el.firstChild;
+    var ctx = canvas.getContext('2d');
+    var cvsWidth = el.clientWidth;
+    var cvsHeight = el.clientHeight;
+    
+    // ctx.fillStyle = x.backgroundColor;
+    // ctx.fillrect(0, 0, cvsWidth, cvsHeight);
+    ctx.drawImage(newImg, 0, 0, cvsWidth, cvsHeight);    
+    var imageData = ctx.getImageData(0, 0, cvsWidth, cvsHeight);
+    var data = imageData.data;
+
+    var bgColor = x.backgroundColor == "white"?[255, 255, 255]: [0, 0, 0];
+    for(var i = 0 ; i < data.length; i += 4){
+      if(data[i+3] < 128){
+        // regions that are not in mask are marked with non-background
+        // color, which indicate they are already occupied. 
+        // However, for presentation purpose, these regions should be 
+        // visually similar to the "real background".
+        data[i ] = bgColor[0] == 0? 1: bgColor[0]-1;
+        data[i+1] = bgColor[1];
+        data[i+2] = bgColor[2];
+        data[i+3] = 255;   
+      } else {
+        data[i ] = bgColor[0];
+        data[i+1] = bgColor[1];
+        data[i+2] = bgColor[2];
+        data[i+3] = 255;   
+      }
+         
     }
 
+    ctx.putImageData(imageData, 0, 0);
+    // document.getElementById("mask_img").remove();
+    
+
+    maskCanvasScaled = ctx = imageData = newImageData = bctx = bgPixel = undefined;
+              WordCloud(el.firstChild, { list: listData,
+                    fontFamily: x.fontFamily,
+                    fontWeight: x.fontWeight,
+                    color: x.color,
+                    minSize: x.minSize,
+                    weightFactor: x.weightFactor,
+                    backgroundColor: x.backgroundColor,
+                    gridSize: x.gridSize,
+                    minRotation: x.minRotation,
+                    maxRotation: x.maxRotation,
+                    shuffle: x.shuffle,
+                    shape: x.shape,
+                    rotateRatio: x.rotateRatio,
+                    ellipticity: x.ellipticity,
+                    clearCanvas: false,
+                    hover: x.hover || cv_handleHover,
+                    abortThreshold: 3000
+                    });
   }
-
-  ctx.putImageData(newImageData, 0, 0);
-//mask(el, x, maskCanvas);
-  var bctx = document.createElement('canvas').getContext('2d');
-  bctx.fillStyle = x.backgroundColor || '#fff';
-  bctx.fillRect(0, 0, 1, 1);
-  var bgPixel = bctx.getImageData(0, 0, 1, 1).data;
-  console.log(bgPixel);
-  var maskCanvasScaled = document.createElement('canvas');
-  maskCanvasScaled.width = el.clientWidth;
-  maskCanvasScaled.height = el.clientHeight;
-  ctx = maskCanvasScaled.getContext('2d');
-  console.log(maskCanvasScaled);
-  ctx.drawImage(maskCanvas,
-    0, 0, maskCanvas.width, maskCanvas.height);
-
-  imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-  newImageData = ctx.createImageData(imageData);
-  for (var j = 0; j < imageData.data.length; j += 4) {
-    if (imageData.data[j + 3] > vvalue) {
-      newImageData.data[j] = bgPixel[0];
-      newImageData.data[j + 1] = bgPixel[1];
-      newImageData.data[j + 2] = bgPixel[2];
-      newImageData.data[j + 3] = bgPixel[3];
-    } else {
-      // This color must not be the same w/ the bgPixel.
-      newImageData.data[j] = bgPixel[0];
-      newImageData.data[j + 1] = bgPixel[1];
-      newImageData.data[j + 2] = bgPixel[2];
-      newImageData.data[j + 3] = bgPixel[3] ? (bgPixel[3] - 1) : 0;
-    }
-  }
-
-  ctx.putImageData(newImageData, 0, 0);
-
-  ctx = el.firstChild.getContext('2d');
-  ctx.drawImage(maskCanvasScaled, 0, 0);
-
-  maskCanvasScaled = ctx = imageData = newImageData = bctx = bgPixel = undefined;
-            WordCloud(el.firstChild, { list: listData,
-                  fontFamily: x.fontFamily,
-                  fontWeight: x.fontWeight,
-                  color: x.color,
-                  minSize: x.minSize,
-                  weightFactor: x.weightFactor,
-                  backgroundColor: x.backgroundColor,
-                  gridSize: x.gridSize,
-                  minRotation: x.minRotation,
-                  maxRotation: x.maxRotation,
-                  shuffle: x.shuffle,
-                  shape: x.shape,
-                  rotateRatio: x.rotateRatio,
-                  ellipticity: x.ellipticity,
-                  clearCanvas: false,
-                  hover: x.hover || cv_handleHover,
-                  abortThreshold: 3000
-                  });
 }
 

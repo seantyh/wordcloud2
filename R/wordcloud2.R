@@ -160,14 +160,17 @@ wordcloud2 <- function(data,
                             ))
 
 
-  htmlwidgets::onRender(chart,"function(el,x){
-                        console.log(123);
-                        if(!iii){
-                          window.location.reload();
-                          iii = False;
-
-                        }
-  }")
+  htmlwidgets::onRender(chart,
+    "function(el,x){                
+      try{        
+        if(!iii){
+          window.location.reload();
+          iii = False;
+        }
+      } catch (err){
+        console.log(err);
+      }
+    }")
 }
 
 
